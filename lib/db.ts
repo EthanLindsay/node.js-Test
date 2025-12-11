@@ -12,6 +12,11 @@ export interface Task {
 const dbPath = path.join(process.cwd(), "data", "tasks.json");
 
 async function ensureDbExists() {
+  // Skip during build time
+  if (process.env.NODE_ENV === "production" && !process.env.NEXT_RUNTIME) {
+    return;
+  }
+  
   try {
     await fs.access(dbPath);
   } catch {
@@ -22,8 +27,12 @@ async function ensureDbExists() {
 
 export async function getTasks(): Promise<Task[]> {
   await ensureDbExists();
-  const data = await fs.readFile(dbPath, "utf-8");
-  return JSON.parse(data);
+  try {
+    const data = await fs.readFile(dbPath, "utf-8");
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
 }
 
 export async function saveTasks(tasks: Task[]): Promise<void> {
